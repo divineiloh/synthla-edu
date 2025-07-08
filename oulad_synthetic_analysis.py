@@ -141,8 +141,6 @@ def fit_and_sample(df: pd.DataFrame, metadata: SingleTableMetadata) -> dict:
     synthesizers = {
         'GaussianCopula': GaussianCopulaSynthesizer(metadata),
         'CTGAN': CTGANSynthesizer(metadata, epochs=400, batch_size=500, verbose=True)
-        # NOTE: A true DP-CTGAN requires integrating a library like Opacus.
-        # This is a significant implementation task and is omitted here for clarity.
     }
     synthetic_sets = {}
     for name, synth_model in synthesizers.items():
@@ -157,7 +155,6 @@ def fit_and_sample(df: pd.DataFrame, metadata: SingleTableMetadata) -> dict:
     return synthetic_sets
 
 # --- 4. Evaluation Suite ---
-
 
 def evaluate_privacy_attacks(real_data: pd.DataFrame, synthetic_sets: dict) -> dict:
     """
