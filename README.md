@@ -18,11 +18,13 @@ A comprehensive pipeline for generating and evaluating synthetic educational dat
 If you use this pipeline in your research, please cite:
 ```bibtex
 @software{synthla_edu_2025,
-  title={SYNTHLA-EDU: Synthetic Learning Analytics Data Generation Pipeline},
-  author={Divine Iloh},
-  year={2025},
-  version={1.0},
-  url={https://github.com/divineiloh/synthla-edu}
+  author       = {Divine Iloh},
+  title        = {{SYNTHLA-EDU: Synthetic Learning Analytics Data Generation Pipeline}},
+  year         = 2025,
+  version      = {1.0},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.15846415},
+  url          = {https://doi.org/10.5281/zenodo.15846415}
 }
 ```
 
