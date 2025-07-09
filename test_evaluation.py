@@ -55,7 +55,7 @@ def test_evaluation():
     
     # Test ML utility evaluation
     logging.info("Testing ML utility evaluation...")
-    real_df_cleaned = real_df.drop(columns=['id_student'])
+    real_df_cleaned = real_df.drop(columns=['id_student'], errors='ignore')
     categorical_features = real_df_cleaned.select_dtypes(include=['object', 'category']).columns.tolist()
     categorical_features.remove('final_result')
     
@@ -87,7 +87,9 @@ def test_evaluation():
     for name, synth_df in synthetic_sets.items():
         synth_df_copy = synth_df.copy()
         synth_df_copy['dropped'] = (synth_df_copy['final_result'] != 'Pass').astype(int)
-        X_synth = synth_df_copy.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
+        X_synth = synth_df_copy.drop(
+        columns=['id_student', 'final_result', 'dropped', 'avg_assessment_score'],
+        errors='ignore')
         y_synth = synth_df_copy['dropped']
         
         # CRITICAL FIX: Use the SAME encoder for synthetic data (no refitting)
