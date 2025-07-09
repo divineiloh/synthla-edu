@@ -2,19 +2,22 @@
 
 [![CI Pipeline Test](https://github.com/divineiloh/synthla-edu/actions/workflows/ci.yml/badge.svg)](https://github.com/divineiloh/synthla-edu/actions/workflows/ci.yml)
 
-A comprehensive pipeline for generating and evaluating synthetic educational data using the Open University Learning Analytics Dataset (OULAD). This enhanced version includes advanced evaluation metrics, privacy attack simulations, and comprehensive reporting.
+[![DOI](https://zenodo.org/badge/DOI/10.1234/zenodo.XXXXXXX.svg)](https://doi.org/10.1234/zenodo.XXXXXXX)
+
+
+A comprehensive pipeline for generating and evaluating synthetic educational data using the Open University Learning Analytics Dataset (OULAD). This version includes advanced evaluation metrics, privacy attack simulations, and comprehensive reporting.
 
 ## 📋 Version Information
 
 **Current Version:** v1.0.0  
-**Release Date:** July 2024  
+**Release Date:** July 2025  
 **DOI:** [To be assigned upon publication]  
 **License:** MIT License
 
 ### Citation
 If you use this pipeline in your research, please cite:
 ```bibtex
-@software{synthla_edu_2024,
+@software{synthla_edu_2025,
   title={SYNTHLA-EDU: Synthetic Learning Analytics Data Generation Pipeline},
   author={Divine Iloh},
   year={2025},
@@ -39,6 +42,7 @@ docker build -t synthla .
 # Run the pipeline
 docker run --rm \
   -v /absolute/path/to/OULAD_data:/app/OULAD_data \
+  --env OULAD_ROOT=/app/OULAD_data \
   --memory=8g synthla
 ```
 
@@ -120,7 +124,7 @@ LA Research/
 ## 🔧 Enhanced Pipeline Features
 
 ### Data Processing & Engineering
-- **Multi-table merging**: Combines all 8 OULAD CSV files with proper join keys
+- **Multi-table merging**: Combines all 7 OULAD CSV files with proper join keys
 - **Advanced feature engineering**: Creates `total_vle_clicks`, `has_vle_interaction`, `avg_assessment_score`
 - **Intelligent data cleaning**: Handles missing values, malformed data, and data type conversion
 - **Missing value audit**: Automatically drops columns with >30% missing values
@@ -231,8 +235,6 @@ The pipeline includes comprehensive logging:
 - **Differential Privacy CTGAN**: Integration with Opacus for formal privacy guarantees
 - **TVAE Benchmark**: Add Tabular Variational Autoencoder for comparison
 - **Optuna Hyperparameter Sweep**: Automated hyperparameter optimization
-- **Multi-table Synthesis**: Support for relational synthetic data generation
-- **Real-time Evaluation**: Web-based dashboard for monitoring synthesis quality
 
 ### Research Extensions
 - **Federated Learning**: Distributed synthetic data generation
@@ -269,7 +271,7 @@ The pipeline includes comprehensive logging:
 - **CTGAN**: Slower training (30-120 minutes), high quality
 
 ### Quality Indicators
-- **Utility scores**: > 0.7 for most ML tasks
+- **Utility scores**: ≥ 0.8 for most ML tasks
 - **Quality scores**: > 0.6 for statistical similarity
 - **Privacy scores**: < 0.7 for MIA (lower is better)
 - **Classification AUC**: > 0.75 for dropout prediction
@@ -289,7 +291,7 @@ To contribute to this pipeline:
 
 ## 📄 License
 
-This project is for educational and research purposes. Please ensure compliance with data privacy regulations when using synthetic data.
+Licensed under the MIT License – see LICENSE for details.
 
 ## 🔗 References
 
@@ -300,4 +302,4 @@ This project is for educational and research purposes. Please ensure compliance 
 
 ---
 
-**Note**: This pipeline is designed for educational research. Always validate synthetic data quality and ensure compliance with institutional data policies. The enhanced v2.2 includes advanced privacy evaluation and comprehensive reporting capabilities. 
+**Note**: This pipeline is designed for educational research. Always validate synthetic data quality and ensure compliance with institutional data policies. 
