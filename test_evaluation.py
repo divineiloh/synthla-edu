@@ -107,7 +107,7 @@ def test_evaluation():
     # Test SDMetrics quality report
     logging.info("Testing SDMetrics quality report...")
     # Use the original real_df (with final_result) for the quality report
-    real_data_for_report = real_df.drop(columns=['id_student'])
+    real_data_for_report = real_df.drop(columns=['id_student'], errors='ignore')
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(data=real_data_for_report)
     
