@@ -21,7 +21,7 @@ If you use this pipeline in your research, please cite:
   title={SYNTHLA-EDU: Synthetic Learning Analytics Data Generation Pipeline},
   author={Divine Iloh},
   year={2025},
-  version={1.0.0},
+  version={1.0},
   url={https://github.com/divineiloh/synthla-edu}
 }
 ```
