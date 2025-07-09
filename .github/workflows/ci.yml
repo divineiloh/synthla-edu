@@ -2,52 +2,57 @@ name: CI Pipeline Test
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
+    # ──────────────────────────────────────────────────────────────
+    - name: Checkout repo
+      uses: actions/checkout@v4        # LFS not needed because we fabricate tiny CSVs
+
+    # ──────────────────────────────────────────────────────────────
+    - name: Set up Python 3.11
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
+    # ──────────────────────────────────────────────────────────────
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
-    - name: Create test data directories
+
+    # ──────────────────────────────────────────────────────────────
+    - name: Create minimal test data (balanced classes)
       run: |
         mkdir -p clean results synthetic
-        # Create a minimal test dataset if needed
-        echo "id_student,code_module,code_presentation,gender,region,highest_education,imd_band,age_band,num_of_prev_attempts,studied_credits,disability,final_result,module_presentation_length,total_vle_clicks,has_vle_interaction,avg_assessment_score" > clean/oulad_master_engineered.csv
-        echo "1,AAA,2013J,M,East Anglian Region,HE Qualification,10-20,35-55,0,60,N,Pass,268,100,1,85.5" >> clean/oulad_master_engineered.csv
-        echo "2,BBB,2013J,F,Scotland,HE Qualification,20-30,35-55,0,60,N,Pass,268,50,1,78.2" >> clean/oulad_master_engineered.csv
-    
-    - name: Create synthetic test data
-      run: |
-        # Create minimal synthetic datasets for testing
+
+        cat <<'EOF' > clean/oulad_master_engineered.csv
+        id_student,code_module,code_presentation,gender,region,highest_education,imd_band,age_band,num_of_prev_attempts,studied_credits,disability,final_result,module_presentation_length,total_vle_clicks,has_vle_interaction,avg_assessment_score
+        1,AAA,2013J,M,East Anglian Region,HE Qualification,10-20,35-55,0,60,N,Pass,268,100,1,85.5
+        2,BBB,2013J,F,Scotland,HE Qualification,20-30,35-55,0,60,N,Fail,268, 50,1,78.2
+        3,AAA,2013J,M,London Region,HE Qualification,20-30,35-55,1,60,N,Pass,268, 20,1,80.0
+        4,BBB,2013J,F,Scotland,HE Qualification,10-20,35-55,1,60,N,Fail,268,150,1,70.4
+        EOF
+
+        # Tiny synthetic mirrors
         cp clean/oulad_master_engineered.csv synthetic/synthetic_GaussianCopula.csv
         cp clean/oulad_master_engineered.csv synthetic/synthetic_CTGAN.csv
-    
-    - name: Run evaluation test
+
+    # ──────────────────────────────────────────────────────────────
+    - name: Run evaluation smoke-test
+      run: python test_evaluation.py
+
+    # ──────────────────────────────────────────────────────────────
+    - name: Verify & print log
       run: |
-        python test_evaluation.py
-    
-    - name: Check for results
-      run: |
-        ls -la results/
-        if [ -f "results/test_evaluation.log" ]; then
-          echo "✅ Test completed successfully"
-          cat results/test_evaluation.log
+        if [ -f results/test_evaluation.log ]; then
+          echo "✅ Smoke test completed"; cat results/test_evaluation.log
         else
-          echo "❌ Test failed - no log file found"
-          exit 1
-        fi 
+          echo "❌ Smoke test failed – log missing"; exit 1
+        fi
