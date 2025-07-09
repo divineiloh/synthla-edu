@@ -9,7 +9,7 @@ A comprehensive pipeline for generating and evaluating synthetic educational dat
 
 ## 📋 Version Information
 
-**Current Version:** v1.0.0  
+**Current Version:** v1.0  
 **Release Date:** July 2025  
 **DOI:** [To be assigned upon publication]  
 **License:** MIT License
