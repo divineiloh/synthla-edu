@@ -10,9 +10,10 @@ A comprehensive pipeline for generating and evaluating synthetic educational dat
 ## 📋 Version Information
 
 **Current Version:** v1.0   
-**Release Date:** July 2025 
+**Release Date:** July 2025   
+**DOI:** [10.5281/zenodo.15846415](https://doi.org/10.5281/zenodo.15846415)   
 **License:** MIT License
-**DOI:** [10.5281/zenodo.15846415](https://doi.org/10.5281/zenodo.15846415) 
+ 
 
 ### Citation
 If you use this pipeline in your research, please cite:
