@@ -2,7 +2,7 @@
 
 [![CI Pipeline Test](https://github.com/divineiloh/synthla-edu/actions/workflows/ci.yml/badge.svg)](https://github.com/divineiloh/synthla-edu/actions/workflows/ci.yml)
 
-[![DOI](https://zenodo.org/badge/DOI/10.1234/zenodo.XXXXXXX.svg)](https://doi.org/10.1234/zenodo.XXXXXXX)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15846415.svg)](https://doi.org/10.5281/zenodo.15846415)
 
 
 A comprehensive pipeline for generating and evaluating synthetic educational data using the Open University Learning Analytics Dataset (OULAD). This version includes advanced evaluation metrics, privacy attack simulations, and comprehensive reporting.
