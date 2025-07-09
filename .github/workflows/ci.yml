@@ -32,13 +32,19 @@ jobs:
       run: |
         mkdir -p clean results synthetic
 
+        # 4 Pass, 4 Fail
         cat <<'EOF' > clean/oulad_master_engineered.csv
         id_student,code_module,code_presentation,gender,region,highest_education,imd_band,age_band,num_of_prev_attempts,studied_credits,disability,final_result,module_presentation_length,total_vle_clicks,has_vle_interaction,avg_assessment_score
         1,AAA,2013J,M,East Anglian Region,HE Qualification,10-20,35-55,0,60,N,Pass,268,100,1,85.5
         2,BBB,2013J,F,Scotland,HE Qualification,20-30,35-55,0,60,N,Fail,268, 50,1,78.2
         3,AAA,2013J,M,London Region,HE Qualification,20-30,35-55,1,60,N,Pass,268, 20,1,80.0
         4,BBB,2013J,F,Scotland,HE Qualification,10-20,35-55,1,60,N,Fail,268,150,1,70.4
+        5,AAA,2013J,M,London Region,HE Qualification,20-30,35-55,0,60,N,Pass,268, 10,1,88.1
+        6,AAA,2013J,F,London Region,HE Qualification,20-30,35-55,0,60,N,Pass,268, 70,1,82.3
+        7,BBB,2013J,M,Scotland,HE Qualification,10-20,35-55,1,60,N,Fail,268, 40,1,65.0
+        8,BBB,2013J,F,Scotland,HE Qualification,10-20,35-55,1,60,N,Fail,268,120,1,72.5
         EOF
+
 
         # Tiny synthetic mirrors
         cp clean/oulad_master_engineered.csv synthetic/synthetic_GaussianCopula.csv
