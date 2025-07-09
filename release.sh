@@ -3,7 +3,7 @@
 # SYNTHLA-EDU Release Script
 # Usage: ./release.sh
 
-echo "🚀 SYNTHLA-EDU v1.0.0 Release Script"
+echo "🚀 SYNTHLA-EDU v1.0 Release Script"
 echo "====================================="
 
 # Check if we're in a git repository
@@ -21,13 +21,13 @@ fi
 echo "✅ Git repository is clean"
 
 # Create and push the tag
-echo "📝 Creating git tag v1.0.0..."
-git tag -a v1.0.0 -m "Release v1.0.0 - Initial release of SYNTHLA-EDU pipeline"
+echo "📝 Creating git tag v1.0..."
+git tag -a v1.0 -m "Release v1.0 - Initial release of SYNTHLA-EDU pipeline"
 
 echo "📤 Pushing tag to remote..."
-git push origin v1.0.0
+git push origin v1.0
 
-echo "🎉 Release v1.0.0 has been tagged and pushed!"
+echo "🎉 Release v1.0 has been tagged and pushed!"
 echo ""
 echo "Next steps:"
 echo "1. Update the CI badge URL in README.md with your actual GitHub username"
