@@ -2,6 +2,13 @@
 """
 Quick test script to run only the evaluation phase
 (assuming synthetic data is already generated)
+
+This script separately tests:
+- Machine Learning utility (classification AUC/accuracy)
+- Statistical quality (SDMetrics QualityReport)
+- Privacy (Membership Inference Attack, MIA)
+
+Note: This is a quick evaluation script, not a full pipeline run. The main pipeline now separates ML utility (in main) from quality and privacy (in the evaluation suite).
 """
 import json
 import logging
@@ -121,7 +128,38 @@ def test_evaluation():
             logging.info(f"{name} - Quality Score: {quality_score:.4f}")
         except Exception as e:
             logging.error(f"Could not generate quality report for {name}: {e}")
-    
+
+    # Test Privacy: Membership Inference Attack (MIA)
+    logging.info("Testing Membership Inference Attack (MIA)...")
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.model_selection import cross_val_score
+    mia_results = {}
+    for name, synth_df in synthetic_sets.items():
+        try:
+            real_data_copy = real_data_for_report.copy()
+            synth_df_copy = synth_df.copy()
+            real_data_copy['is_synthetic'] = 0
+            synth_df_copy['is_synthetic'] = 1
+            combined_data = pd.concat([real_data_copy, synth_df_copy], ignore_index=True)
+            cat_feats = combined_data.select_dtypes(include=['object', 'category']).columns.tolist()
+            if 'final_result' in cat_feats:
+                cat_feats.remove('final_result')
+            encoder_mia = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+            encoded_cols = pd.DataFrame(
+                encoder_mia.fit_transform(combined_data[cat_feats]),
+                index=combined_data.index,
+                columns=encoder_mia.get_feature_names_out(cat_feats)
+            )
+            X_attack = pd.concat([combined_data.drop(columns=cat_feats), encoded_cols], axis=1)
+            X_attack = X_attack.drop(columns=['is_synthetic', 'final_result'])
+            y_attack = combined_data['is_synthetic']
+            attacker = LogisticRegression(random_state=RANDOM_SEED, max_iter=1000, n_jobs=-1)
+            scores = cross_val_score(attacker, X_attack, y_attack, cv=3, scoring='roc_auc')
+            mia_score = scores.mean()
+            mia_results[f'{name}_mia_score'] = mia_score
+            logging.info(f"{name} - MIA Score: {mia_score:.4f}")
+        except Exception as e:
+            logging.error(f"Could not compute MIA score for {name}: {e}")
     logging.info("Evaluation test completed!")
 
 if __name__ == "__main__":
