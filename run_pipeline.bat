@@ -32,6 +32,7 @@ echo.
 echo Starting SYNTHLA-EDU pipeline...
 echo This may take 1-2 hours depending on your system...
 echo.
+echo As of v1.0, ML utility evaluation is handled in main, while quality and privacy are handled in the evaluation suite for efficiency.
 python oulad_synthetic_analysis.py
 
 if %errorlevel% neq 0 (
