@@ -147,16 +147,19 @@ LA Research/
 - **Grade Regression**: Continuous prediction with MAE evaluation
 - **One-hot encoding**: Proper handling of categorical features
 - **Cross-validation**: Robust evaluation with train/test splits
+- **Note:** As of v1.0, machine learning utility evaluation (AUC, MAE) is handled directly in the main pipeline function for efficiency. Models are trained only once and used for both single-run utility scores and bootstrap analysis, avoiding redundant computation.
 
 #### 2. Statistical Quality Assessment
-- **SDMetrics Quality Reports**: Comprehensive statistical similarity measures
+- **SDMetrics Quality Reports**: Comprehensive statistical similarity measures using the full SDMetrics QualityReport
 - **Column Shapes Analysis**: Distribution comparison across all features
 - **Quality Score**: Overall data quality metric (0-1 scale)
+- **Note:** The quality evaluation is performed in the evaluation suite, which now focuses solely on quality and privacy. The quality assessment itself remains complete and thorough, running the full SDMetrics QualityReport for each synthetic dataset.
 
 #### 3. Privacy Attack Simulation
 - **Membership Inference Attack (MIA)**: Tests ability to distinguish real vs synthetic data
 - **Logistic Regression Attack**: Standard privacy evaluation method using scikit-learn
 - **Privacy Score**: Lower scores indicate better privacy preservation (0.5 is ideal)
+- **Note:** The evaluation suite is now referred to as a "partial evaluation suite" because it covers only quality and privacy (not machine learning utility), but both evaluations are still comprehensive.
 
 ### Advanced Reporting & Visualization
 - **Separate visualization files**: Individual PNG files for each metric type
