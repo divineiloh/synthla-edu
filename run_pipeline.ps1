@@ -64,6 +64,7 @@ Write-Host ""
 Write-Host "Starting SYNTHLA-EDU pipeline..." -ForegroundColor Yellow
 Write-Host "This may take 1-2 hours depending on your system..." -ForegroundColor Yellow
 Write-Host ""
+Write-Host "As of v1.0, ML utility evaluation is handled in main, while quality and privacy are handled in the evaluation suite for efficiency." -ForegroundColor Yellow
 
 $startTime = Get-Date
 try {
