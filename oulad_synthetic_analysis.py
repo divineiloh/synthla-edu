@@ -206,134 +206,91 @@ def evaluate_privacy_attacks(real_data: pd.DataFrame, synthetic_sets: dict) -> d
     return mia_results
 
 def evaluate_suite(real_df: pd.DataFrame, synthetic_sets: dict) -> dict:
-    """Run a full evaluation suite: Utility, Quality, and Privacy Attacks."""
-    logging.info("Starting full evaluation suite...")
-    full_results = {'utility': {}, 'quality': {}, 'privacy_attack': {}}
+    """Run a partial evaluation suite for Quality and Privacy Attacks only."""
+    logging.info("Starting partial evaluation suite (Quality & Privacy)...")
+    partial_results = {'quality': {}, 'privacy_attack': {}}
 
-    # --- Part 1: Utility Evaluation ---
-    logging.info("--- Evaluating Machine Learning Utility ---")
-    
-    real_df_cleaned = real_df.drop(columns=['id_student'])
-    categorical_features = real_df_cleaned.select_dtypes(include=['object', 'category']).columns.tolist()
-    categorical_features.remove('final_result')
-
-    # --- Task 1: Dropout Classification ---
-    real_df_cleaned['dropped'] = (real_df_cleaned['final_result'] != 'Pass').astype(int)
-    X = real_df_cleaned.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
-    y = real_df_cleaned['dropped']
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=RANDOM_SEED, stratify=y)
-    
-    # CRITICAL FIX: Fit encoder only on training data to prevent data leakage
-    encoder = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-    X_train_encoded = pd.DataFrame(encoder.fit_transform(X_train[categorical_features]), index=X_train.index)
-    X_train_encoded.columns = encoder.get_feature_names_out(categorical_features)
-    X_train_proc = pd.concat([X_train.drop(columns=categorical_features), X_train_encoded], axis=1)
-    
-    # Transform test data using the SAME encoder (no refitting)
-    X_test_encoded = pd.DataFrame(encoder.transform(X_test[categorical_features]), index=X_test.index)
-    X_test_encoded.columns = encoder.get_feature_names_out(categorical_features)
-    X_test_proc = pd.concat([X_test.drop(columns=categorical_features), X_test_encoded], axis=1)
-    
-    clf = RandomForestClassifier(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1)
-    clf.fit(X_train_proc, y_train)
-    full_results['utility']['real_dropout_accuracy'] = accuracy_score(y_test, clf.predict(X_test_proc))
-    proba_real = clf.predict_proba(X_test_proc)[:, 1]
-    full_results['utility']['real_dropout_auc'] = roc_auc_score(y_test, proba_real)
-
-    for name, synth_df in synthetic_sets.items():
-        synth_df_copy = synth_df.copy()
-        synth_df_copy['dropped'] = (synth_df_copy['final_result'] != 'Pass').astype(int)
-        X_synth = synth_df_copy.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
-        y_synth = synth_df_copy['dropped']
-        
-        # CRITICAL FIX: Use the SAME encoder for synthetic data (no refitting)
-        X_synth_encoded = pd.DataFrame(encoder.transform(X_synth[categorical_features]), index=X_synth.index)
-        X_synth_encoded.columns = encoder.get_feature_names_out(categorical_features)
-        X_synth_proc = pd.concat([X_synth.drop(columns=categorical_features), X_synth_encoded], axis=1)
-        
-        clf_synth = RandomForestClassifier(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1)
-        clf_synth.fit(X_synth_proc, y_synth)
-        
-        acc = accuracy_score(y_test, clf_synth.predict(X_test_proc))
-        proba_synth = clf_synth.predict_proba(X_test_proc)[:, 1]
-        auc = roc_auc_score(y_test, proba_synth)
-        
-        full_results['utility'][f'{name}_dropout_accuracy'] = acc
-        full_results['utility'][f'{name}_dropout_auc'] = auc
-
-    # --- Task 2: Grade Regression ---
-    X_reg = real_df_cleaned.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
-    y_reg = real_df_cleaned['avg_assessment_score']
-    X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(X_reg, y_reg, test_size=0.25, random_state=RANDOM_SEED)
-
-    # CRITICAL FIX: Fit encoder only on training data to prevent data leakage
-    encoder_reg = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
-    X_train_r_encoded = pd.DataFrame(encoder_reg.fit_transform(X_train_r[categorical_features]), index=X_train_r.index)
-    X_train_r_encoded.columns = encoder_reg.get_feature_names_out(categorical_features)
-    X_train_r_proc = pd.concat([X_train_r.drop(columns=categorical_features), X_train_r_encoded], axis=1)
-    
-    # Transform test data using the SAME encoder (no refitting)
-    X_test_r_encoded = pd.DataFrame(encoder_reg.transform(X_test_r[categorical_features]), index=X_test_r.index)
-    X_test_r_encoded.columns = encoder_reg.get_feature_names_out(categorical_features)
-    X_test_r_proc = pd.concat([X_test_r.drop(columns=categorical_features), X_test_r_encoded], axis=1)
-    
-    reg = RandomForestRegressor(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1)
-    reg.fit(X_train_r_proc, y_train_r)
-    full_results['utility']['real_grade_mae'] = mean_absolute_error(y_test_r, reg.predict(X_test_r_proc))
-
-    for name, synth_df in synthetic_sets.items():
-        X_synth_r = synth_df.drop(columns=['final_result', 'avg_assessment_score'])
-        y_synth_r = synth_df['avg_assessment_score']
-
-        # CRITICAL FIX: Use the SAME encoder for synthetic data (no refitting)
-        X_synth_r_encoded = pd.DataFrame(encoder_reg.transform(X_synth_r[categorical_features]), index=X_synth_r.index)
-        X_synth_r_encoded.columns = encoder_reg.get_feature_names_out(categorical_features)
-        X_synth_r_proc = pd.concat([X_synth_r.drop(columns=categorical_features), X_synth_r_encoded], axis=1)
-        
-        reg_synth = RandomForestRegressor(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1)
-        reg_synth.fit(X_synth_r_proc, y_synth_r)
-        mae = mean_absolute_error(y_test_r, reg_synth.predict(X_test_r_proc))
-        full_results['utility'][f'{name}_grade_mae'] = mae
-    
-    logging.info("Machine Learning Utility evaluation complete.")
-
-    # --- Part 2: Quality & Privacy Evaluation ---
-    logging.info("--- Evaluating Statistical Quality and Privacy ---")
-    # Use the original real_df (with final_result) for the quality report
+    # --- Part 1: Quality Evaluation ---
+    logging.info("--- Evaluating Statistical Quality ---")
     real_data_for_report = prepare_data_for_synthesis(real_df)
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(data=real_data_for_report)
 
     for name, synth_df in synthetic_sets.items():
         try:
-            # Convert SDV metadata to SDMetrics format
             metadata_dict = metadata.to_dict()
             report = QualityReport()
             report.generate(real_data_for_report, synth_df, metadata_dict)
-            # Get the overall quality score from the report
             quality_score = report.get_score()
-            full_results['quality'][f'{name}_quality_score'] = quality_score
+            partial_results['quality'][f'{name}_quality_score'] = quality_score
             logging.info(f"{name} - Quality Score: {quality_score:.4f}")
             
-            # Try to save visualization if available
             try:
                 fig = report.get_visualization('Column Shapes')
                 fig.write_image(RESULTS_DIR / f"quality_report_{name}.png")
                 logging.info(f"Saved SDMetrics quality report for {name}.")
             except Exception as viz_error:
                 logging.warning(f"Could not save visualization for {name}: {viz_error}")
-                # Continue execution - visualization failure shouldn't crash the pipeline
-                
+
         except Exception as e:
             logging.error(f"Could not generate quality report for {name}: {e}")
-            full_results['quality'][f'{name}_quality_score'] = np.nan
+            partial_results['quality'][f'{name}_quality_score'] = np.nan
 
-    # --- Part 3: Privacy Attack Simulation (MIA) ---
+    # --- Part 2: Privacy Attack Simulation (MIA) ---
     logging.info("--- Simulating Membership Inference Attacks (MIA) ---")
     mia_results = evaluate_privacy_attacks(real_data_for_report, synthetic_sets)
-    full_results['privacy_attack'] = mia_results
+    partial_results['privacy_attack'] = mia_results
 
-    return full_results
+    return partial_results
+
+# --- 4. Bootstrap Analysis ---
+def run_bootstrap_analysis(X_test, y_test, models_dict, metric, task_name):
+    """Run bootstrap analysis for classification (AUC) or regression (MAE)."""
+    import numpy as np
+    from sklearn.utils import resample
+    N_ITERATIONS = 1000
+    ALPHA = 0.95
+    LOWER_P = ((1.0 - ALPHA) / 2.0) * 100
+    UPPER_P = (ALPHA + ((1.0 - ALPHA) / 2.0)) * 100
+    scores = {name: [] for name in models_dict}
+    for i in range(N_ITERATIONS):
+        boot_idx = resample(np.arange(len(X_test)), replace=True, n_samples=len(X_test), random_state=i)
+        X_boot = X_test.iloc[boot_idx]
+        y_boot = y_test.iloc[boot_idx]
+        for name, model in models_dict.items():
+            if metric == 'auc':
+                preds = model.predict_proba(X_boot)[:, 1]
+                score = roc_auc_score(y_boot, preds)
+            elif metric == 'mae':
+                preds = model.predict(X_boot)
+                score = mean_absolute_error(y_boot, preds)
+            scores[name].append(score)
+        if i % 100 == 0:
+            print(f"Bootstrap iteration {i}/{N_ITERATIONS}")
+            logging.info(f"Bootstrap iteration {i}/{N_ITERATIONS}")
+    # Print and log results
+    print(f"\n--- 95% Confidence Intervals for {task_name} ---")
+    logging.info(f"\n--- 95% Confidence Intervals for {task_name} ---")
+    for name, vals in scores.items():
+        ci_lower = np.percentile(vals, LOWER_P)
+        ci_upper = np.percentile(vals, UPPER_P)
+        mean_val = np.mean(vals)
+        print(f"{name}: {mean_val:.3f} (95% CI: {ci_lower:.3f}–{ci_upper:.3f})")
+        logging.info(f"{name}: {mean_val:.3f} (95% CI: {ci_lower:.3f}–{ci_upper:.3f})")
+    # Significance for classification only
+    if metric == 'auc':
+        diffs_ctgan = [r - c for r, c in zip(scores['Real'], scores['CTGAN'])]
+        ci_diff_lower = np.percentile(diffs_ctgan, LOWER_P)
+        ci_diff_upper = np.percentile(diffs_ctgan, UPPER_P)
+        sig_ctgan = 'YES' if ci_diff_lower > 0 or ci_diff_upper < 0 else 'NO'
+        print(f"Real vs CTGAN: Difference CI is [{ci_diff_lower:.3f}, {ci_diff_upper:.3f}]. Significant? {sig_ctgan}")
+        logging.info(f"Real vs CTGAN: Difference CI is [{ci_diff_lower:.3f}, {ci_diff_upper:.3f}]. Significant? {sig_ctgan}")
+        diffs_gc = [r - g for r, g in zip(scores['Real'], scores['GaussianCopula'])]
+        ci_diff_gc_lower = np.percentile(diffs_gc, LOWER_P)
+        ci_diff_gc_upper = np.percentile(diffs_gc, UPPER_P)
+        sig_gc = 'YES' if ci_diff_gc_lower > 0 or ci_diff_gc_upper < 0 else 'NO'
+        print(f"Real vs GaussianCopula: Difference CI is [{ci_diff_gc_lower:.3f}, {ci_diff_gc_upper:.3f}]. Significant? {sig_gc}")
+        logging.info(f"Real vs GaussianCopula: Difference CI is [{ci_diff_gc_lower:.3f}, {ci_diff_gc_upper:.3f}]. Significant? {sig_gc}")
 
 # --- 5. Visualization ---
 def create_summary_visualizations(results: dict):
@@ -348,7 +305,7 @@ def create_summary_visualizations(results: dict):
 
     # --- Plot 1: Classification Utility (AUC) ---
     fig1, ax1 = plt.subplots(figsize=(8, 6), dpi=100)
-    real_auc = utility_res['real_dropout_auc']
+    real_auc = utility_res['Real_dropout_auc']
     synth_aucs = [utility_res[f'{m}_dropout_auc'] for m in models]
     ax1.bar(['Real Data'] + models, [real_auc] + synth_aucs, color=colors)
     ax1.axhline(y=real_auc, color='r', linestyle='--', label=f'Real Data AUC ({real_auc:.3f})')
@@ -364,7 +321,7 @@ def create_summary_visualizations(results: dict):
 
     # --- Plot 2: Regression Utility (MAE) ---
     fig2, ax2 = plt.subplots(figsize=(8, 6), dpi=100)
-    real_mae = utility_res['real_grade_mae']
+    real_mae = utility_res['Real_grade_mae']
     synth_maes = [utility_res[f'{m}_grade_mae'] for m in models]
     ax2.bar(['Real Data'] + models, [real_mae] + synth_maes, color=colors)
     ax2.axhline(y=real_mae, color='r', linestyle='--', label=f'Real Data MAE ({real_mae:.2f})')
@@ -379,7 +336,7 @@ def create_summary_visualizations(results: dict):
 
     # --- Plot 3: Overall Quality Score ---
     fig3, ax3 = plt.subplots(figsize=(8, 6), dpi=100)
-    quality_scores = [quality_res[f'{m}_quality_score'] for m in models]
+    quality_scores = [quality_res.get(f'{m}_quality_score', np.nan) for m in models]
     ax3.bar(models, quality_scores, color=colors[1:]) # Exclude 'Real Data' color
     ax3.set_title('Overall Data Quality (SDMetrics)')
     ax3.set_ylabel('Quality Score (higher is better)')
@@ -412,7 +369,6 @@ def main():
     logging.info("="*50)
     logging.info("SYNTHLA-EDU Pipeline Started")
     logging.info("="*50)
-    
     try:
         # 1. Data loading + feature engineering
         master_real_df = load_and_engineer_oulad(ROOT)
@@ -426,9 +382,76 @@ def main():
         
         # 4. Fit generators and sample synthetic sets
         synthetic_sets = fit_and_sample(synth_ready_df, metadata)
+
+        # --- Setup for ML Tasks (Train/Test Split and Encoders) ---
+        real_df_cleaned = master_real_df.drop(columns=['id_student'])
+        categorical_features = real_df_cleaned.select_dtypes(include=['object', 'category']).columns.tolist()
+        categorical_features.remove('final_result')
         
-        # 5. Run the full evaluation suite
-        final_results = evaluate_suite(master_real_df, synthetic_sets)
+        # --- Train Classification Models ---
+        real_df_cleaned['dropped'] = (real_df_cleaned['final_result'] != 'Pass').astype(int)
+        X_cls = real_df_cleaned.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
+        y_cls = real_df_cleaned['dropped']
+        X_train_cls, X_test_cls, y_train_cls, y_test_cls = train_test_split(X_cls, y_cls, test_size=0.25, random_state=RANDOM_SEED, stratify=y_cls)
+        
+        encoder_cls = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+        X_train_cls_proc = pd.concat([X_train_cls.drop(columns=categorical_features), pd.DataFrame(encoder_cls.fit_transform(X_train_cls[categorical_features]), index=X_train_cls.index, columns=encoder_cls.get_feature_names_out(categorical_features))], axis=1)
+        X_test_cls_proc = pd.concat([X_test_cls.drop(columns=categorical_features), pd.DataFrame(encoder_cls.transform(X_test_cls[categorical_features]), index=X_test_cls.index, columns=encoder_cls.get_feature_names_out(categorical_features))], axis=1)
+        
+        clf_real = RandomForestClassifier(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1).fit(X_train_cls_proc, y_train_cls)
+        
+        cls_models_dict = {'Real': clf_real}
+        for name, synth_df in synthetic_sets.items():
+            X_synth_cls = synth_df.copy().drop(columns=['final_result', 'avg_assessment_score'])
+            y_synth_cls = (synth_df['final_result'] != 'Pass').astype(int)
+            X_synth_cls_proc = pd.concat([X_synth_cls.drop(columns=categorical_features), pd.DataFrame(encoder_cls.transform(X_synth_cls[categorical_features]), index=X_synth_cls.index, columns=encoder_cls.get_feature_names_out(categorical_features))], axis=1)
+            clf_synth = RandomForestClassifier(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1).fit(X_synth_cls_proc, y_synth_cls)
+            cls_models_dict[name] = clf_synth
+
+        # --- Train Regression Models ---
+        X_reg = real_df_cleaned.drop(columns=['final_result', 'dropped', 'avg_assessment_score'])
+        y_reg = real_df_cleaned['avg_assessment_score']
+        X_train_reg, X_test_reg, y_train_reg, y_test_reg = train_test_split(X_reg, y_reg, test_size=0.25, random_state=RANDOM_SEED)
+
+        encoder_reg = OneHotEncoder(handle_unknown='ignore', sparse_output=False)
+        X_train_reg_proc = pd.concat([X_train_reg.drop(columns=categorical_features), pd.DataFrame(encoder_reg.fit_transform(X_train_reg[categorical_features]), index=X_train_reg.index, columns=encoder_reg.get_feature_names_out(categorical_features))], axis=1)
+        X_test_reg_proc = pd.concat([X_test_reg.drop(columns=categorical_features), pd.DataFrame(encoder_reg.transform(X_test_reg[categorical_features]), index=X_test_reg.index, columns=encoder_reg.get_feature_names_out(categorical_features))], axis=1)
+        
+        reg_real = RandomForestRegressor(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1).fit(X_train_reg_proc, y_train_reg)
+
+        reg_models_dict = {'Real': reg_real}
+        for name, synth_df in synthetic_sets.items():
+            X_synth_reg = synth_df.drop(columns=['final_result', 'avg_assessment_score'])
+            y_synth_reg = synth_df['avg_assessment_score']
+            X_synth_reg_proc = pd.concat([X_synth_reg.drop(columns=categorical_features), pd.DataFrame(encoder_reg.transform(X_synth_reg[categorical_features]), index=X_synth_reg.index, columns=encoder_reg.get_feature_names_out(categorical_features))], axis=1)
+            reg_synth = RandomForestRegressor(n_estimators=200, random_state=RANDOM_SEED, n_jobs=-1).fit(X_synth_reg_proc, y_synth_reg)
+            reg_models_dict[name] = reg_synth
+
+        # --- NEW: Calculate single-run utility scores directly in main ---
+        logging.info("--- Calculating Single-Run Machine Learning Utility ---")
+        final_results = {'utility': {}, 'quality': {}, 'privacy_attack': {}}
+        
+        # Classification utility
+        for name, model in cls_models_dict.items():
+            proba = model.predict_proba(X_test_cls_proc)[:, 1]
+            auc = roc_auc_score(y_test_cls, proba)
+            final_results['utility'][f'{name}_dropout_auc'] = auc
+
+        # Regression utility
+        for name, model in reg_models_dict.items():
+            preds = model.predict(X_test_reg_proc)
+            mae = mean_absolute_error(y_test_reg, preds)
+            final_results['utility'][f'{name}_grade_mae'] = mae
+
+        # --- MODIFIED: Call simplified evaluation suite for quality and privacy only ---
+        quality_and_privacy_results = evaluate_suite(master_real_df, synthetic_sets)
+        final_results['quality'] = quality_and_privacy_results.get('quality', {})
+        final_results['privacy_attack'] = quality_and_privacy_results.get('privacy_attack', {})
+        
+        # --- Bootstrap analysis (Stays the same) ---
+        logging.info("--- Running Bootstrap Analysis ---")
+        run_bootstrap_analysis(X_test_cls_proc, y_test_cls, cls_models_dict, metric='auc', task_name='Dropout Prediction (AUC)')
+        run_bootstrap_analysis(X_test_reg_proc, y_test_reg, reg_models_dict, metric='mae', task_name='Grade Prediction (MAE)')
         
         # 6. Save final results to JSON
         results_path = RESULTS_DIR / "final_results.json"
